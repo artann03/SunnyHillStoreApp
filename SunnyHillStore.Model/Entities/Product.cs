@@ -6,10 +6,14 @@ namespace SunnyHillStore.Model.Entities
 {
     public class Product : BaseEntity
     {
-        public Guid Id { get; set; }
-
         [Required, MaxLength(200)]
         public string Name { get; set; }
+
+        [Required]
+        public string Description { get; set; }
+
+        [Required]
+        public string ImageUrl { get; set; }
 
         [Required]
         public decimal Price { get; set; }
@@ -18,10 +22,6 @@ namespace SunnyHillStore.Model.Entities
         public int Quantity { get; set; }
 
         [Required]
-        public string Status { get; set; } 
-
-        [Required]
-        public string Category { get; set; }
-
+        public string Status { get; set; }
     }
 }
