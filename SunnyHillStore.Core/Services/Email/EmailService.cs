@@ -31,7 +31,7 @@ public class EmailService : IEmailService
                         <a href='{resetLink}' 
                            style='background-color: #4CAF50; 
                                   color: white; 
-                                  padding: 12px 24px; 
+                                  padding: 12px 12px; 
                                   text-decoration: none; 
                                   border-radius: 4px;
                                   display: inline-block;'>
