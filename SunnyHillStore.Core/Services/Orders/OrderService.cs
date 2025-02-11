@@ -1,3 +1,4 @@
+using AutoMapper;
 using SunnyHillStore.Core.Services.Base;
 using SunnyHillStore.Core.Services.CurrentUser;
 using SunnyHillStore.Model.Entities;
@@ -8,17 +9,20 @@ namespace SunnyHillStore.Core.Services.Orders
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IOrderItemRepository _orderItemRepository;
+        private readonly IMapper _mapper;
 
         public OrderService(
             IOrderRepository orderRepository,
             IOrderItemRepository orderItemRepository,
-            ICurrentUserHelper currentUserService) : base(orderRepository, currentUserService)
+            ICurrentUserHelper currentUserService,
+            IMapper mapper) : base(orderRepository, currentUserService)
         {
             _orderRepository = orderRepository;
             _orderItemRepository = orderItemRepository;
+            _mapper = mapper;
         }
 
-        public async Task<Order> CreateOrderAsync(int userId, IEnumerable<OrderItem> orderItems)
+        public async Task<OrderDto> CreateOrderAsync(int userId, IEnumerable<OrderItem> orderItems)
         {
             var order = new Order
             {
@@ -36,17 +40,19 @@ namespace SunnyHillStore.Core.Services.Orders
                 await _orderItemRepository.CreateAsync(item);
             }
 
-            return createdOrder;
+            return _mapper.Map<OrderDto>(createdOrder);
         }
 
-        public async Task<IEnumerable<Order>> GetUserOrdersAsync(int userId)
+        public async Task<IEnumerable<OrderDto>> GetUserOrdersAsync(int userId)
         {
-            return await _orderRepository.GetUserOrdersAsync(userId);
+            var orders = await _orderRepository.GetUserOrdersAsync(userId);
+            return _mapper.Map<IEnumerable<OrderDto>>(orders);
         }
 
-        public async Task<Order> GetOrderByNumberAsync(string orderNumber)
+        public async Task<OrderDto> GetOrderByNumberAsync(string orderNumber)
         {
-            return await _orderRepository.GetOrderByNumberAsync(orderNumber);
+            var order = await _orderRepository.GetOrderByNumberAsync(orderNumber);
+            return _mapper.Map<OrderDto>(order);
         }
 
         private string GenerateOrderNumber()

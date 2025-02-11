@@ -34,76 +34,15 @@ namespace SunnyHillStore.Controllers
         [AllowAnonymous]
         public override async Task<IActionResult> GetAllAsync()
         {
-            var products = await _productService.GetAllAsync();
-
-
-            var productDtos = products.Select(p => new ProductResponseDto
-            {
-                PublicId = p.PublicId,
-                Name = p.Name,
-                Description = p.Description,
-                ImageUrl = p.ImageUrl,
-                Price = p.Price,
-                Quantity = p.Quantity,
-                Status = p.Status
-            });
-
+            var productDtos = await _productService.GetAllAsync();
             return Ok(productDtos);
         }
+
         [AllowAnonymous]
         [HttpGet("filter")]
         public async Task<IActionResult> GetAllAsync([FromQuery] ProductFilterRequestDto filter)
         {
-            var products = await _productService.GetAllAsync();
-
-            if (filter.IsInStock.HasValue)
-            {
-                products = products.Where(p => (filter.IsInStock.Value && p.Quantity > 0) || (!filter.IsInStock.Value && p.Quantity == 0));
-            }
-
-            if (!string.IsNullOrEmpty(filter.NameStartsWith))
-            {
-                products = products.Where(p => p.Name.StartsWith(filter.NameStartsWith, StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (filter.OrderByDescending)
-            {
-                products = products.OrderByDescending(p => p.Price).ThenByDescending(x => x.Id);
-            }
-            else
-            {
-                products = products.OrderBy(p => p.Price).ThenByDescending(x => x.Id);
-            }
-
-            var totalCount = products.Count();
-            var totalPages = (int)Math.Ceiling(totalCount / (double)filter.PageSize);
-
-            var paginatedProducts = products
-                .Skip((filter.PageNumber - 1) * filter.PageSize)
-                .Take(filter.PageSize);
-
-            var productDtos = paginatedProducts.Select(p => new ProductResponseDto
-            {
-                PublicId = p.PublicId,
-                Name = p.Name,
-                Description = p.Description,
-                ImageUrl = p.ImageUrl,
-                Price = p.Price,
-                Quantity = p.Quantity,
-                Status = p.Status
-            });
-
-            var response = new PaginatedResponseDto<ProductResponseDto>
-            {
-                Items = productDtos,
-                PageNumber = filter.PageNumber,
-                PageSize = filter.PageSize,
-                TotalCount = totalCount,
-                TotalPages = totalPages,
-                HasPreviousPage = filter.PageNumber > 1,
-                HasNextPage = filter.PageNumber < totalPages
-            };
-
+            var response = await _productService.GetFilteredAsync(filter);
             return Ok(response);
         }
 
@@ -111,23 +50,11 @@ namespace SunnyHillStore.Controllers
         [AllowAnonymous]
         public override async Task<IActionResult> GetByIdAsync(int id)
         {
-            var product = await _productService.GetByIdAsync(id);
-            if (product == null)
+            var productDto = await _productService.GetByIdAsync(id);
+            if (productDto == null)
             {
                 return NotFound();
             }
-
-            var productDto = new ProductResponseDto
-            {
-                PublicId = product.PublicId,
-                Name = product.Name,
-                Description = product.Description,
-                ImageUrl = product.ImageUrl,
-                Price = product.Price,
-                Quantity = product.Quantity,
-                Status = product.Status
-            };
-
             return Ok(productDto);
         }
 
@@ -142,30 +69,8 @@ namespace SunnyHillStore.Controllers
 
             try
             {
-                var imageUrl = await _cloudinaryService.UploadImageAsync(model.Image);
-
-                var product = new Product
-                {
-                    Name = model.Name,
-                    Description = model.Description,
-                    ImageUrl = imageUrl,
-                    Price = model.Price,
-                    Quantity = model.Quantity,
-                    Status = model.Quantity > 0 ? StatusConstants.InStock.ToString() : StatusConstants.OutOfStock.ToString()
-                };
-
-                var createdProduct = await _productService.CreateAsync(product);
-                var productDto = new ProductResponseDto
-                {
-                    PublicId = createdProduct.PublicId,
-                    Name = createdProduct.Name,
-                    Description = createdProduct.Description,
-                    ImageUrl = createdProduct.ImageUrl,
-                    Price = createdProduct.Price,
-                    Quantity = createdProduct.Quantity,
-                    Status = createdProduct.Status
-                };
-
+                model.ImageUrl = await _cloudinaryService.UploadImageAsync(model.Image);
+                var productDto = await _productService.CreateAsync(model);
                 return Ok(productDto);
             }
             catch (Exception ex)
@@ -178,31 +83,11 @@ namespace SunnyHillStore.Controllers
         [Authorize(Roles = AuthorizationConstants.AdminRole)]
         public async Task<IActionResult> UpdateAsync(string id, [FromBody] UpdateProductDto model)
         {
-            var product = await _productService.GetByPublicIdAsync(id);
-            if (product == null)
+            var productDto = await _productService.UpdateAsync(id, model);
+            if (productDto == null)
             {
                 return NotFound();
             }
-
-            product.Name = model.Name;
-            product.Description = model.Description;
-            product.ImageUrl = model.ImageUrl;
-            product.Price = model.Price;
-            product.Quantity = model.Quantity;
-
-            var updatedProduct = await _productService.UpdateAsync(product);
-
-            var productDto = new ProductResponseDto
-            {
-                PublicId = updatedProduct.PublicId,
-                Name = updatedProduct.Name,
-                Description = updatedProduct.Description,
-                ImageUrl = updatedProduct.ImageUrl,
-                Price = updatedProduct.Price,
-                Quantity = updatedProduct.Quantity,
-                Status = updatedProduct.Status
-            };
-
             return Ok(productDto);
         }
 

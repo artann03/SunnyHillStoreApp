@@ -3,7 +3,7 @@ using SunnyHillStore.Model.Entities;
 
 public interface IOrderService : IBaseService<Order>
 {
-    Task<Order> CreateOrderAsync(int userId, IEnumerable<OrderItem> orderItems);
-    Task<IEnumerable<Order>> GetUserOrdersAsync(int userId);
-    Task<Order> GetOrderByNumberAsync(string orderNumber);
+    Task<OrderDto> CreateOrderAsync(int userId, IEnumerable<OrderItem> orderItems);
+    Task<IEnumerable<OrderDto>> GetUserOrdersAsync(int userId);
+    Task<OrderDto> GetOrderByNumberAsync(string orderNumber);
 } 

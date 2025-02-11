@@ -7,19 +7,23 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using AutoMapper;
 
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IMapper _mapper;
     private readonly JwtSettings _jwtSettings;
     private readonly IEmailService _emailService;
 
     public AuthService(
         IUserRepository userRepository,
+        IMapper mapper,
         IOptions<JwtSettings> jwtSettings,
         IEmailService emailService)
     {
         _userRepository = userRepository;
+        _mapper = mapper;
         _jwtSettings = jwtSettings.Value;
         _emailService = emailService;
     }
@@ -42,21 +46,10 @@ public class AuthService : IAuthService
             throw new InvalidOperationException("Email already registered");
         }
 
-        var user = new User
-        {
-            Name = model.Name,
-            Email = model.Email,
-            PasswordHash = HashPassword(model.Password),
-            Role = RoleConstants.StandardUser,
-            PublicId = Guid.NewGuid().ToString(),
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-            CreatedBy = "System",
-            UpdatedBy = "System",
-            RefreshToken = "",
-            RefreshTokenExpiryTime = DateTime.UtcNow
-        };
-
+        var user = _mapper.Map<User>(model);
+        user.PasswordHash = HashPassword(model.Password);
+        user.RefreshToken = "";
+        user.RefreshTokenExpiryTime = DateTime.UtcNow;
         await _userRepository.CreateAsync(user);
         return await GenerateAuthResponseAsync(user);
     }
@@ -104,6 +97,7 @@ public class AuthService : IAuthService
 
     public async Task<bool> ResetPasswordAsync(ResetPasswordModel model)
     {
+        model.Token = model.Token.Replace(" ", "+");
         var user = await _userRepository.GetByPasswordResetTokenAsync(model.Token);
         if (user == null || 
             user.PasswordResetToken != model.Token || 

@@ -119,6 +119,8 @@ namespace SunnyHillStore
             services.AddScoped<ICloudinaryService, CloudinaryService>();
             services.Configure<EmailSettings>(Configuration.GetSection("EmailSettings"));
             services.AddScoped<IEmailService, EmailService>();
+            services.AddAutoMapper(typeof(OrderMappingProfile).Assembly);
+            services.AddAutoMapper(typeof(AuthMappingProfile).Assembly);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

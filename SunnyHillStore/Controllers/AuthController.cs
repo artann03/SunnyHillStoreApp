@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SunnyHillStore.Core.Repositories.Users;
 using System;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace SunnyHillStore.Controllers
 {
@@ -68,13 +69,16 @@ namespace SunnyHillStore.Controllers
 
         [Authorize]
         [HttpPost("revoke-token")]
-        public async Task<IActionResult> RevokeToken([FromBody] string refreshToken)
+        public async Task<IActionResult> RevokeToken()
         {
-            var result = await _authService.RevokeTokenAsync(refreshToken);
-            if (!result)
-                return BadRequest(new { message = "Token not found" });
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
 
-            return Ok(new { message = "Token revoked" });
+            await _authService.RevokeTokenAsync(userId);
+            return Ok();
         }
 
         [HttpPost("forgot-password")]
